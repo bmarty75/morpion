@@ -1,0 +1,336 @@
+/* Morpion — le jeu se joue sur une page de cahier : petits carreaux, marge
+   rouge, et deux stylos, un bleu et un rouge. Tout le vocabulaire visuel vient
+   de la. */
+
+:root {
+  --papier: #fcfbf6;
+  --carreau: #cddeee;
+  --marge: #d8564c;
+  --bleu: #22407a;
+  --rouge: #b83227;
+  --graphite: #5a6472;
+
+  --carreau-pas: 23px;
+  --trait: 7;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  padding: clamp(1.5rem, 5vw, 4rem) clamp(1rem, 4vw, 3rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: var(--graphite);
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  font-size: 17px;
+  line-height: 1.55;
+
+  background-color: var(--papier);
+  background-image:
+    repeating-linear-gradient(to right, var(--carreau) 0 1px, transparent 1px var(--carreau-pas)),
+    repeating-linear-gradient(to bottom, var(--carreau) 0 1px, transparent 1px var(--carreau-pas));
+}
+
+.feuille {
+  width: min(920px, 100%);
+  display: grid;
+  grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+  gap: clamp(2rem, 5vw, 4.5rem);
+  align-items: center;
+  padding-left: clamp(1rem, 3vw, 2.5rem);
+  border-left: 2px solid var(--marge);
+}
+
+/* --- Colonne de gauche ---------------------------------------------------- */
+
+.titre {
+  margin: 0;
+  font-size: clamp(2.6rem, 7vw, 3.6rem);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.015em;
+  color: var(--bleu);
+}
+
+.statut {
+  margin: 0.6rem 0 2rem;
+  font-size: 1.15rem;
+  color: var(--graphite);
+  min-height: 1.55em;
+}
+
+.statut[data-ton="bleu"] {
+  color: var(--bleu);
+}
+.statut[data-ton="rouge"] {
+  color: var(--rouge);
+}
+
+.reglages {
+  display: grid;
+  gap: 1.1rem;
+  margin-bottom: 2rem;
+}
+
+.groupe {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.groupe legend {
+  padding: 0 0 0.45rem;
+  font-size: 0.95rem;
+  color: var(--graphite);
+}
+
+.choix {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.choix label {
+  cursor: pointer;
+}
+
+.choix input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.choix span {
+  display: inline-block;
+  padding: 0.3rem 0.75rem;
+  border: 1.5px solid rgba(90, 100, 114, 0.35);
+  color: var(--graphite);
+  background: transparent;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.choix label:hover span {
+  border-color: var(--bleu);
+}
+
+.choix input:checked + span {
+  border-color: var(--bleu);
+  color: var(--bleu);
+  box-shadow: inset 0 -0.55em 0 rgba(34, 64, 122, 0.12);
+}
+
+.choix input:focus-visible + span {
+  outline: 2px dashed var(--bleu);
+  outline-offset: 3px;
+}
+
+.scores {
+  display: flex;
+  gap: 1.6rem;
+  margin: 0 0 1.6rem;
+  padding-top: 1.1rem;
+  border-top: 1.5px solid rgba(90, 100, 114, 0.25);
+}
+
+.score {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  font-size: 0.95rem;
+}
+
+.score-valeur {
+  font-size: 1.9rem;
+  line-height: 1;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.score--bleu .score-valeur,
+.score--bleu .score-nom {
+  color: var(--bleu);
+}
+.score--rouge .score-valeur,
+.score--rouge .score-nom {
+  color: var(--rouge);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.bouton {
+  font: inherit;
+  cursor: pointer;
+  padding: 0.45rem 1.1rem;
+  color: var(--papier);
+  background: var(--bleu);
+  border: 1.5px solid var(--bleu);
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.bouton:hover {
+  background: #1a3162;
+}
+
+.bouton--discret {
+  color: var(--graphite);
+  background: transparent;
+  border-color: rgba(90, 100, 114, 0.35);
+}
+
+.bouton--discret:hover {
+  background: transparent;
+  border-color: var(--graphite);
+  color: #3d4652;
+}
+
+.bouton:focus-visible {
+  outline: 2px dashed var(--bleu);
+  outline-offset: 3px;
+}
+
+/* --- Le plateau ----------------------------------------------------------- */
+
+.plateau-zone {
+  position: relative;
+  width: min(100%, 26rem);
+  aspect-ratio: 1;
+  margin-inline: auto;
+}
+
+.quadrillage,
+.trace {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.quadrillage path {
+  fill: none;
+  stroke: var(--bleu);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  opacity: 0.85;
+}
+
+.plateau {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+}
+
+.case {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.case:disabled {
+  cursor: default;
+}
+
+.case svg {
+  width: 72%;
+  height: 72%;
+  overflow: visible;
+}
+
+.case path,
+.case circle {
+  fill: none;
+  stroke-width: var(--trait);
+  stroke-linecap: round;
+}
+
+.case[data-marque="X"] path {
+  stroke: var(--bleu);
+}
+
+.case[data-marque="O"] circle {
+  stroke: var(--rouge);
+}
+
+/* Apercu du coup : le stylo effleure la case avant de poser la marque. */
+.case[data-apercu] svg {
+  opacity: 0.28;
+}
+
+.case:focus-visible {
+  outline: 2px dashed var(--graphite);
+  outline-offset: -8px;
+}
+
+/* Le trait du stylo se pose : le trace s'ecrit au lieu d'apparaitre. */
+.tracer {
+  animation: ecrire 0.26s ease-out both;
+}
+
+.tracer:nth-of-type(2) {
+  animation-delay: 0.16s;
+}
+
+@keyframes ecrire {
+  from {
+    stroke-dashoffset: var(--longueur);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.trace line {
+  stroke: currentColor;
+  stroke-width: 6;
+  stroke-linecap: round;
+  animation: ecrire 0.42s 0.12s ease-out both;
+}
+
+.trace[data-gagnant="X"] {
+  color: var(--bleu);
+}
+.trace[data-gagnant="O"] {
+  color: var(--rouge);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tracer,
+  .trace line {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (max-width: 42rem) {
+  .feuille {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+  }
+
+  .colonne-jeu {
+    order: -1;
+  }
+}

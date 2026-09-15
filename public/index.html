@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Morpion</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="feuille">
+      <div class="colonne-texte">
+        <h1 class="titre">Morpion</h1>
+        <p class="statut" id="statut" role="status">Au bleu de commencer.</p>
+
+        <div class="reglages">
+          <fieldset class="groupe">
+            <legend>Adversaire</legend>
+            <div class="choix" id="choix-adversaire">
+              <label><input type="radio" name="adversaire" value="humain" checked /><span>Un ami</span></label>
+              <label><input type="radio" name="adversaire" value="ordinateur" /><span>L'ordinateur</span></label>
+            </div>
+          </fieldset>
+
+          <fieldset class="groupe" id="groupe-niveau" hidden>
+            <legend>Niveau</legend>
+            <div class="choix" id="choix-niveau">
+              <label><input type="radio" name="niveau" value="facile" /><span>Facile</span></label>
+              <label><input type="radio" name="niveau" value="moyen" checked /><span>Moyen</span></label>
+              <label><input type="radio" name="niveau" value="imbattable" /><span>Imbattable</span></label>
+            </div>
+          </fieldset>
+        </div>
+
+        <div class="scores">
+          <p class="score score--bleu"><span class="score-nom">Bleu</span><span class="score-valeur" id="score-x">0</span></p>
+          <p class="score score--nul"><span class="score-nom">Nuls</span><span class="score-valeur" id="score-nul">0</span></p>
+          <p class="score score--rouge"><span class="score-nom">Rouge</span><span class="score-valeur" id="score-o">0</span></p>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="bouton" id="rejouer">Nouvelle partie</button>
+          <button type="button" class="bouton bouton--discret" id="raz">Effacer les scores</button>
+        </div>
+      </div>
+
+      <div class="colonne-jeu">
+        <div class="plateau-zone">
+          <svg class="quadrillage" viewBox="0 0 300 300" aria-hidden="true" focusable="false">
+            <path d="M 102 12 C 99 90, 101 210, 100 288" />
+            <path d="M 200 14 C 203 92, 199 208, 201 286" />
+            <path d="M 12 101 C 90 98, 210 102, 288 99" />
+            <path d="M 14 200 C 92 203, 208 199, 286 201" />
+          </svg>
+
+          <div class="plateau" id="plateau" role="group" aria-label="Grille de morpion"></div>
+
+          <svg class="trace" id="trace" viewBox="0 0 300 300" aria-hidden="true" focusable="false"></svg>
+        </div>
+      </div>
+    </main>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,111 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Une nouvelle poussee sur une PR annule le run precedent ; sur main, on laisse finir.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  tests:
+    name: Tests (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22, 24]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Verification de syntaxe
+        run: npm run check
+      - name: Tests unitaires
+        run: npm test
+
+  couverture:
+    name: Couverture de code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      # Echoue si la couverture passe sous les seuils definis dans package.json.
+      - run: npm run test:coverage
+
+  demarrage:
+    name: Demarrage du serveur
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Lancer npm start et verifier chaque ressource
+        run: |
+          PORT=3000 npm start &
+          for i in $(seq 1 20); do
+            curl -sf -o /dev/null http://localhost:3000/ && break
+            sleep 0.5
+          done
+          for chemin in / /app.js /style.css /src/game.js /src/ai.js; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:3000$chemin")
+            echo "$chemin -> $code"
+            test "$code" = 200
+          done
+
+  deploiement:
+    name: Deploiement GitHub Pages
+    needs: [tests, couverture, demarrage]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+
+      # Meme disposition que server.js : public/ a la racine, modules de jeu sous src/.
+      - name: Assembler le site
+        run: |
+          mkdir -p _site/src
+          cp public/* _site/
+          find src -maxdepth 1 -name '*.js' ! -name '*.test.js' -exec cp {} _site/src/ \;
+          ls -R _site
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+      - id: deploiement
+        uses: actions/deploy-pages@v4
+
+      - name: Verifier le site en ligne
+        env:
+          URL: ${{ steps.deploiement.outputs.page_url }}
+        run: |
+          for chemin in "" app.js style.css src/game.js src/ai.js; do
+            for i in $(seq 1 10); do
+              code=$(curl -s -o /dev/null -w '%{http_code}' "${URL}${chemin}")
+              [ "$code" = 200 ] && break
+              sleep 3
+            done
+            echo "${URL}${chemin} -> $code"
+            test "$code" = 200
+          done
