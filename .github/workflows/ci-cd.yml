@@ -71,7 +71,8 @@ jobs:
 
       - name: Token absent, analyse ignoree
         if: env.SONAR_TOKEN == ''
-        run: echo "::warning::SONAR_TOKEN absent : analyse Sonar ignoree (voir la section CI/CD du README)."
+        run: |
+          echo "::warning::SONAR_TOKEN absent, analyse Sonar ignoree (voir la section CI/CD du README)."
 
   demarrage:
     name: Demarrage du serveur
