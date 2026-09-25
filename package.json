@@ -8,6 +8,7 @@
     "start": "node server.js",
     "test": "node --test",
     "test:coverage": "node --test --experimental-test-coverage --test-coverage-lines=90 --test-coverage-branches=85 --test-coverage-functions=70",
+    "test:lcov": "node -e \"require('node:fs').mkdirSync('coverage',{recursive:true})\" && node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/lcov.info",
     "check": "node --check server.js && node --check public/app.js && node --check src/game.js && node --check src/ai.js"
   },
   "engines": {

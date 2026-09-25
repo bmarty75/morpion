@@ -44,16 +44,53 @@ chaque pull request et a chaque push sur `main` :
 | -------------------------- | ---------------- | ---------------------------------------------------------------- |
 | Tests (Node 20 / 22 / 24)  | toujours         | `npm run check` puis `npm test`                                  |
 | Couverture de code         | toujours         | `npm run test:coverage` (lignes 90 %, branches 85 %, fonctions 70 %) |
+| Analyse SonarQube Cloud    | toujours         | analyse statique + couverture lcov, echoue si le quality gate echoue |
 | Demarrage du serveur       | toujours         | lance `npm start` et verifie que chaque ressource repond 200     |
 | Deploiement GitHub Pages   | push sur `main`  | publie `public/` + `src/*.js`, puis verifie le site en ligne     |
 
-Le deploiement n attend que la reussite des trois autres jobs. Le jeu tournant
+Le deploiement n attend que la reussite des quatre autres jobs. Le jeu tournant
 entierement dans le navigateur, un hebergement statique suffit : les chemins du
 front sont relatifs pour fonctionner aussi bien a la racine (`server.js`) que
 sous `https://<utilisateur>.github.io/<depot>/`.
 
 **A faire une fois** : dans le depot GitHub, *Settings → Pages → Build and
 deployment → Source : GitHub Actions*.
+
+## Analyse de qualite : SonarQube Cloud
+
+L analyse statique est confiee a SonarQube Cloud, gratuit sur les depots
+publics. Elle ne rajoute aucune dependance npm : le scanner tourne dans une
+action GitHub, pas dans `node_modules`.
+
+La couverture n est pas recalculee par Sonar : c est Node qui la produit, au
+format lcov, via le reporter integre.
+
+```bash
+npm run test:lcov     # ecrit coverage/lcov.info
+```
+
+`sonar.qualitygate.wait=true` fait echouer le job si le quality gate n est pas
+respecte, et le deploiement depend de ce job. Le quality gate joue donc le role
+d **etape d approbation** : du code neuf mal couvert ou juge trop complexe
+bloque la mise en ligne.
+
+**Mise en place** (une seule fois) :
+
+1. Se connecter sur [sonarcloud.io](https://sonarcloud.io) avec le compte GitHub,
+   puis *Analyze new project* et choisir le depot `morpion`.
+2. Choisir la methode d analyse **GitHub Actions**. SonarQube Cloud affiche
+   alors une `SONAR_TOKEN` a copier.
+3. Dans le depot GitHub : *Settings → Secrets and variables → Actions →
+   New repository secret*, nom `SONAR_TOKEN`, valeur collee.
+4. Reporter la *Project Key* et l *Organization Key* affichees par Sonar dans
+   [`sonar-project.properties`](sonar-project.properties), a la place des deux
+   `VOTRE_ORGANISATION`.
+5. Dans SonarQube Cloud, desactiver *Automatic Analysis*
+   (*Administration → Analysis Method*), sinon il entre en conflit avec
+   l analyse lancee par la CI.
+
+Tant que le secret `SONAR_TOKEN` n existe pas, le job n echoue pas : il emet un
+avertissement et passe. Le reste de la chaine continue de fonctionner.
 
 Le point important : `src/game.js` et `src/ai.js` sont importes **tels quels**
 par le navigateur (`import ... from '/src/game.js'`) et par les tests. Une seule

@@ -43,6 +43,36 @@ jobs:
       # Echoue si la couverture passe sous les seuils definis dans package.json.
       - run: npm run test:coverage
 
+  sonar:
+    name: Analyse SonarQube Cloud
+    runs-on: ubuntu-latest
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      # fetch-depth: 0 -> Sonar lit l'historique git pour dater chaque ligne et
+      # distinguer le code neuf du code existant.
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Tests et couverture au format lcov
+        run: npm run test:lcov
+
+      # sonar.qualitygate.wait=true : le job echoue si le quality gate echoue.
+      # C'est lui qui sert d'etape d'approbation avant le deploiement.
+      - name: Analyse et attente du quality gate
+        if: env.SONAR_TOKEN != ''
+        uses: SonarSource/sonarqube-scan-action@v5
+        with:
+          args: -Dsonar.qualitygate.wait=true
+
+      - name: Token absent, analyse ignoree
+        if: env.SONAR_TOKEN == ''
+        run: echo "::warning::SONAR_TOKEN absent : analyse Sonar ignoree (voir la section CI/CD du README)."
+
   demarrage:
     name: Demarrage du serveur
     runs-on: ubuntu-latest
@@ -66,7 +96,7 @@ jobs:
 
   deploiement:
     name: Deploiement GitHub Pages
-    needs: [tests, couverture, demarrage]
+    needs: [tests, couverture, sonar, demarrage]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
