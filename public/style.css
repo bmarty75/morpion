@@ -259,8 +259,7 @@ body {
   overflow: visible;
 }
 
-.case path,
-.case circle {
+.case path {
   fill: none;
   stroke-width: var(--trait);
   stroke-linecap: round;
@@ -270,7 +269,8 @@ body {
   stroke: var(--bleu);
 }
 
-.case[data-marque="O"] circle {
+/* Le rond est un <path> (une boucle tracee a la main), pas un <circle>. */
+.case[data-marque="O"] path {
   stroke: var(--rouge);
 }
 
